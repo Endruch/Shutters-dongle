@@ -1,0 +1,36 @@
+# Only the firmware sources, the docs and the enclosure with its label (case/) belong in the repository.
+# Everything below is build output, caches, backups or local tooling.
+
+# PlatformIO build output and the libraries it downloads (about 40 MB)
+.pio/
+.vscode/
+.idea/
+
+# macOS and editor junk
+.DS_Store
+._*
+*.swp
+*~
+*.bak
+*.orig
+
+# Python caches and virtual environments (the case scripts use their own venv)
+__pycache__/
+*.pyc
+.venv/
+venv/
+/cq/
+/pio/
+
+# Blender backup files (case.blend itself is kept)
+*.blend1
+*.blend2
+
+# Enclosure: intermediate meshes for the renders are recreated by build_case_step.py,
+# the fit-test template is only built on request (--plate)
+case/parts/
+case/test_plate.*
+
+# Logs, local notes and tool settings
+*.log
+.claude/

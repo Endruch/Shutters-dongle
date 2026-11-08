@@ -1,0 +1,13 @@
+{
+  "domain": "shutters_dongle",
+  "name": "Shutters Dongle",
+  "codeowners": ["@Endruch"],
+  "config_flow": true,
+  "documentation": "https://github.com/Endruch/Shutters-dongle",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/Endruch/Shutters-dongle/issues",
+  "requirements": [],
+  "version": "0.1.0",
+  "zeroconf": ["_shuttersdongle._tcp.local."]
+}

@@ -1,0 +1,49 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Add a Shutters Dongle",
+        "description": "Dongles on the same network are usually found automatically. To add one by hand, enter its IP address and the password of its web interface.",
+        "data": {
+          "host": "IP address or hostname",
+          "password": "Web interface password"
+        }
+      },
+      "zeroconf_confirm": {
+        "title": "Shutters Dongle found",
+        "description": "Add **{name}** ({host})? Enter the password of its web interface.",
+        "data": {
+          "password": "Web interface password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Password changed",
+        "description": "{name} ({host}) no longer accepts the saved password. Enter the current web interface password.",
+        "data": {
+          "password": "Web interface password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Can't reach the dongle at this address.",
+      "invalid_auth": "Wrong password.",
+      "password_not_set": "The dongle is still on its first-start password. Open its web interface and set a password first.",
+      "rate_limited": "The dongle is refusing logins for a moment after a failed attempt. Try again.",
+      "firmware_too_old": "Update the dongle's firmware from its web interface: System → Firmware update."
+    },
+    "abort": {
+      "already_configured": "This dongle is already set up.",
+      "reauth_successful": "Password updated.",
+      "cannot_connect": "Can't reach the dongle.",
+      "not_ipv4": "Only IPv4 addresses are supported."
+    }
+  },
+  "entity": {
+    "button": {
+      "shade": {
+        "name": "Shade"
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="72.40mm" height="45.40mm" viewBox="0 0 72.40 45.40">
+<rect x="0" y="0" width="72.40" height="45.40" rx="8.70" fill="#fff" stroke="#595959" stroke-width="0.15"/>
+<circle cx="67.42" cy="14.65" r="1.00" fill="#fff" stroke="#595959" stroke-width="0.15"/>
+<line x1="2.20" y1="7.30" x2="70.20" y2="7.30" stroke="#000" stroke-width="0.25"/>
+<line x1="2.20" y1="27.80" x2="70.20" y2="27.80" stroke="#000" stroke-width="0.25"/>
+<line x1="17.20" y1="35.80" x2="66.00" y2="35.80" stroke="#000" stroke-width="0.25"/>
+<line x1="17.20" y1="39.70" x2="66.00" y2="39.70" stroke="#000" stroke-width="0.25"/>
+<line x1="63.80" y1="14.65" x2="66.20" y2="14.65" stroke="#000" stroke-width="0.3"/>
+<polygon points="66.20,14.65 65.30,14.10 65.30,15.20" fill="#000"/>
+<text x="36.20" y="4.30" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="3.70" text-anchor="middle" fill="#000">Shutters Dongle</text>
+<text x="2.20" y="10.10" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="2.30" text-anchor="start" fill="#000">FIRST SETUP</text>
+<text x="2.20" y="13.10" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="1.95" text-anchor="start" fill="#000">1  Power on, join the WI-FI network below</text>
+<text x="2.20" y="15.80" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="1.95" text-anchor="start" fill="#000">2  Password (first time): shutters</text>
+<text x="2.20" y="18.50" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="1.95" text-anchor="start" fill="#000">3  Open 192.168.4.1, set a new password</text>
+<text x="2.20" y="21.20" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="1.95" text-anchor="start" fill="#000">4  System &gt; Search networks &gt; Wi-Fi &gt; Save</text>
+<text x="2.20" y="23.90" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="1.95" text-anchor="start" fill="#000">5  Then open &lt;WI-FI&gt;.local</text>
+<text x="63.20" y="15.55" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="2.60" text-anchor="end" fill="#000">RESET</text>
+<text x="70.20" y="19.40" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="1.85" text-anchor="end" fill="#000">Hold BOOT for 10 s</text>
+<text x="70.20" y="21.70" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="1.85" text-anchor="end" fill="#000">with a needle in the hole</text>
+<text x="70.20" y="24.00" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="1.85" text-anchor="end" fill="#000">LED blinks, then let go.</text>
+<text x="70.20" y="26.30" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="1.85" text-anchor="end" fill="#000">Password + Wi-Fi reset.</text>
+<text x="5.20" y="31.40" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="2.10" text-anchor="start" fill="#000">POWER</text>
+<text x="17.20" y="31.40" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="2.10" text-anchor="start" fill="#000">5 V DC, centre pin +, 0.5 A or more</text>
+<text x="5.20" y="35.40" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="2.10" text-anchor="start" fill="#000">WI-FI</text>
+<text x="5.20" y="39.30" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="2.10" text-anchor="start" fill="#000">MAC</text>
+<text x="5.20" y="43.00" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="2.10" text-anchor="start" fill="#000">GITHUB</text>
+<text x="17.20" y="43.00" font-family="Helvetica,Arial,sans-serif" font-weight="400" font-size="2.10" text-anchor="start" fill="#000">github.com/Endruch/Shutters-dongle</text>
+</svg>

@@ -252,7 +252,7 @@ function row(s,open){
    await fetch('/api/shutter/unpair',{method:'POST',body:new URLSearchParams({ch:s.ch})});tick();return}
   await save();
   await fetch('/api/shutter/cmd',{method:'POST',body:new URLSearchParams({ch:s.ch,cmd:c})});
-  if(c==='LEARN'){if(proto.value==='0')tick();else flash(b,'Sent',3000);}
+  if(c==='LEARN')flash(b,'PROG sent',3000);
  });
  return tr;
 }

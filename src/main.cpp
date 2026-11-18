@@ -15,7 +15,6 @@
 #include "radio.h"
 #include "web_pages.h"
 
-#define FW_VERSION "0.1-esp32"
 #define MAX_CH 128
 #define LOG_LINES 60
 #define REPEATS_NORMAL 2
@@ -391,17 +390,6 @@ void somfyTap(uint8_t ch, uint8_t cmd, uint8_t repeats) {
   saveShutter(ch, false);
 }
 
-bool startLearn(uint8_t ch) {
-  if (seq.kind != SQ_NONE || !radioOk) return false;
-  seq = Seq();
-  seq.kind = SQ_LEARN;
-  seq.ch = ch;
-  seq.start = millis();
-  Radio::rxStart();
-  logf("ch%u learn: listening 20 s for PROG on a paired remote", ch);
-  return true;
-}
-
 bool startUnpair(uint8_t ch) {
   if (seq.kind != SQ_NONE || !radioOk) return false;
   seq = Seq();
@@ -416,28 +404,6 @@ void seqLoop() {
   if (seq.kind == SQ_NONE) return;
   uint32_t now = millis();
   Shutter &s = sh[seq.ch];
-
-  if (seq.kind == SQ_LEARN) {
-    uint8_t c;
-    uint32_t id;
-    uint16_t code;
-    while (Radio::rxPoll(c, id, code)) {
-      if (c == CMD_PROG) {
-        if (!seq.heard) logf("ch%u learn: PROG heard from remote %06X", seq.ch, (unsigned)id);
-        seq.heard = true;
-        seq.lastHeard = now;
-      }
-    }
-    bool released = seq.heard && now - seq.lastHeard > 600;
-    bool timeout = now - seq.start > LEARN_MS;
-    if (released || timeout || seq.sendNow) {
-      Radio::rxStop();
-      somfyTap(seq.ch, CMD_PROG, REPEATS_TAP);
-      logf("ch%u learn: PROG sent (%s)", seq.ch, released ? "after remote" : seq.sendNow ? "on request" : "timeout");
-      seq.kind = SQ_NONE;
-    }
-    return;
-  }
 
   if (s.proto == 0) {
     switch (seq.step) {
@@ -1095,15 +1061,6 @@ void handleShutterCmd() {
   int ch = server.arg("ch").toInt();
   Cmd c = parseCmd(server.arg("cmd"));
   if (ch < 0 || ch >= MAX_CH || c == C_NONE) return server.send(400, "text/plain", "bad request");
-  if (c == C_LEARN && sh[ch].proto == 0) {
-    if (!radioOk) return server.send(400, "text/plain", "CC1101 not found");
-    if (seq.kind == SQ_LEARN && seq.ch == ch) {
-      seq.sendNow = true;
-      return server.send(200, "text/plain", "OK");
-    }
-    if (!startLearn(ch)) return server.send(409, "text/plain", "busy");
-    return server.send(200, "text/plain", "OK");
-  }
   if (!enqueue(ch, c)) return server.send(503, "text/plain", "busy, try again");
   server.send(200, "text/plain", "OK");
 }

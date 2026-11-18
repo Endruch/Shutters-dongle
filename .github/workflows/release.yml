@@ -30,8 +30,17 @@ jobs:
           cp .pio/build/esp32/firmware.bin "shutters-dongle-$v.bin"
           cp .pio/build/esp32/firmware-full.bin "shutters-dongle-$v-full.bin"
           files=("shutters-dongle-$v.bin" "shutters-dongle-$v-full.bin")
+          cat > notes.md <<EOF
+          ## Which file do I need?
+
+          | File | What it's for |
+          |---|---|
+          | \`shutters-dongle-$v-full.bin\` | **First flash over USB.** Write it to address \`0x0\`: \`esptool.py --chip esp32 write_flash 0x0 shutters-dongle-$v-full.bin\` |
+          | \`shutters-dongle-$v.bin\` | **Over-the-air update.** Home Assistant installs it when you press Update; you can also upload it under System → Firmware update in the dongle's web interface. Don't flash it over USB to address \`0x0\`. |
+
+          EOF
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${files[@]}" --clobber
           else
-            gh release create "$TAG" "${files[@]}" --title "$TAG" --generate-notes
+            gh release create "$TAG" "${files[@]}" --title "$TAG" --notes-file notes.md --generate-notes
           fi

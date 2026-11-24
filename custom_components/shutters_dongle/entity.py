@@ -39,3 +39,15 @@ class DongleChannelEntity(CoordinatorEntity[DongleCoordinator]):
         except DongleError as err:
             raise HomeAssistantError(f"{self.coordinator.info.name}: {cmd} failed: {err}") from err
         await self.coordinator.async_request_refresh()
+
+
+class DongleDeviceEntity(CoordinatorEntity[DongleCoordinator]):
+    """An entity of the dongle itself rather than of one shutter channel."""
+
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator: DongleCoordinator, key: str) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.info.mac}_{key}"
+        self._attr_translation_key = key
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, coordinator.info.mac)})

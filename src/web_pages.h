@@ -132,6 +132,10 @@ static const char PAGE_SYSTEM[] PROGMEM = R"HTML(
 <label>ip address</label><input type="text" name="ip">
 <label>network mask</label><input type="text" name="mask">
 <label>gateway</label><input type="text" name="gw">
+<h2>Home Assistant connection</h2>
+<select name="link" id="link"><option value="0">Integration (found automatically, no MQTT)</option><option value="1">MQTT</option></select>
+<small id="linkhint"></small>
+<div id="mq">
 <h2>MQTT configuration</h2>
 <label>broker address</label><input type="text" name="mqtt_host">
 <small>0.0.0.0 (the default) disables MQTT.</small>
@@ -141,6 +145,7 @@ static const char PAGE_SYSTEM[] PROGMEM = R"HTML(
 <label>client id</label><input type="text" name="client_id">
 <label>device topic</label><input type="text" name="topic">
 <label><input type="checkbox" name="discovery" value="1"> Home Assistant MQTT discovery</label>
+</div>
 <h2>Radio (CC1101)</h2>
 <p style="margin:2px 0"><span id="dot" class="dot"></span><b id="rtxt">checking...</b></p>
 <label>Somfy RTS frequency MHz</label><input type="text" name="freq">
@@ -192,8 +197,13 @@ document.getElementById('pf').onsubmit=async e=>{e.preventDefault();
  const r=await fetch('/api/setpw',{method:'POST',body:new URLSearchParams(new FormData(e.target))});
  if(r.ok){document.body.innerHTML='<main><h2>Password changed</h2><p>The dongle is restarting. Reconnect to its Wi-Fi with the new password.</p></main>'}
  else document.getElementById('pm').textContent=await r.text()};
+const link=document.getElementById('link');
+function linkUi(){const m=link.value==='1';document.getElementById('mq').hidden=!m;
+ document.getElementById('linkhint').textContent=m?'The Home Assistant integration and network announcement (mDNS) are off.':'Home Assistant finds the dongle on its own. MQTT is off.';}
+link.onchange=linkUi;
 fetch('/api/config').then(r=>r.json()).then(c=>{
  for(const k in c){const e=f.elements[k];if(!e)continue;if(e.type==='checkbox')e.checked=!!c[k];else e.value=c[k];}
+ linkUi();
 });
 f.onsubmit=async e=>{e.preventDefault();
  const d=new URLSearchParams(new FormData(f));

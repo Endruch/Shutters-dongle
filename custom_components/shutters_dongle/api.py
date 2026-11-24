@@ -50,12 +50,16 @@ class Channel:
     name: str
     proto: int
     state: int
+    remote_id: str | None = None
+    code: int | None = None
 
 
 @dataclass(frozen=True)
 class DongleState:
     radio_ok: bool
     channels: dict[int, Channel]
+    rssi: int | None = None
+    ip: str | None = None
 
 
 class DongleClient:
@@ -185,15 +189,29 @@ class DongleClient:
         j = await self._json("/api/state")
         try:
             channels = {
-                int(c["ch"]): Channel(int(c["ch"]), str(c["name"]), int(c["proto"]), int(c["state"]))
+                int(c["ch"]): Channel(
+                    int(c["ch"]),
+                    str(c["name"]),
+                    int(c["proto"]),
+                    int(c["state"]),
+                    str(c["id"]) if "id" in c else None,
+                    int(c["code"]) if "code" in c else None,
+                )
                 for c in j["ch"]
             }
-            return DongleState(radio_ok=bool(j["radio"]), channels=channels)
+            rssi = int(j["rssi"]) if j.get("rssi") else None
+            return DongleState(radio_ok=bool(j["radio"]), channels=channels, rssi=rssi, ip=j.get("ip") or None)
         except (KeyError, TypeError, ValueError) as err:
             raise DongleConnectionError("unexpected /api/state reply") from err
 
     async def link(self) -> None:
         await self._request("POST", "/api/ha/link")
+
+    async def reboot(self) -> None:
+        await self._request("POST", "/api/reboot")
+
+    async def access_point(self) -> None:
+        await self._request("POST", "/api/ap")
 
     async def send_command(self, ch: int, cmd: str) -> None:
         await self._request("POST", "/api/shutter/cmd", data={"ch": ch, "cmd": cmd})

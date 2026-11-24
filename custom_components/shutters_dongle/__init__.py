@@ -15,7 +15,7 @@ from .coordinator import DongleCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.BUTTON, Platform.COVER, Platform.UPDATE]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.COVER, Platform.SENSOR, Platform.UPDATE]
 
 type DongleConfigEntry = ConfigEntry[DongleCoordinator]
 

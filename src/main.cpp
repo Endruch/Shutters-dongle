@@ -37,6 +37,7 @@ struct Config {
   String deviceName;
   String topic;
   bool discovery = false;
+  uint8_t link = 0;  // 0 = Home Assistant integration (mDNS), 1 = MQTT
   float freq = 433.42;
   float freqAok = 433.92;
   uint8_t pSck = 18, pMiso = 19, pMosi = 23, pCs = 5, pGdo0 = 4;
@@ -83,8 +84,8 @@ PubSubClient mqtt(net);
 #define AP_LOST_AFTER_MS 30000
 #define AP_GRACE_MS 120000
 #define AP_MAX_MS 600000
-bool apOn = false;
-uint32_t apUntil = 0, apStarted = 0, apGraceAt = 0;
+bool apOn = false, apByHa = false;
+uint32_t apUntil = 0, apStarted = 0, apGraceAt = 0, apMaxMs = AP_MAX_MS;
 bool bootPhase = true, staUp = false, lostAp = false, altToggle = false;
 uint32_t downSince = 0, lastAttempt = 0;
 bool radioOk = false;
@@ -171,6 +172,8 @@ void loadConfig() {
   cfg.deviceName = prefs.getString("dname", "");
   cfg.topic = prefs.getString("topic", defaultTopic());
   cfg.discovery = prefs.getBool("disc", false);
+  bool mqttSet = cfg.mqttHost.length() && cfg.mqttHost != "0.0.0.0";
+  cfg.link = prefs.getUChar("link", mqttSet ? 1 : 0);
   cfg.freq = prefs.getFloat("freq", 433.42);
   cfg.freqAok = prefs.getFloat("freq_aok", 433.92);
   cfg.pSck = prefs.getUChar("p_sck", 18);
@@ -202,6 +205,7 @@ void saveConfig() {
   prefs.putString("dname", cfg.deviceName);
   prefs.putString("topic", cfg.topic);
   prefs.putBool("disc", cfg.discovery);
+  prefs.putUChar("link", cfg.link);
   prefs.putFloat("freq", cfg.freq);
   prefs.putFloat("freq_aok", cfg.freqAok);
   prefs.putUChar("p_sck", cfg.pSck);
@@ -525,7 +529,7 @@ void onMqtt(char *topic, byte *payload, unsigned int len) {
 }
 
 void mqttLoop() {
-  if (cfg.mqttHost == "0.0.0.0" || cfg.mqttHost.length() == 0 || WiFi.status() != WL_CONNECTED) return;
+  if (cfg.link != 1 || cfg.mqttHost == "0.0.0.0" || cfg.mqttHost.length() == 0 || WiFi.status() != WL_CONNECTED) return;
   if (mqtt.connected()) {
     mqtt.loop();
     if (haBirthPending) {
@@ -861,6 +865,7 @@ void handleChallenge() {
 }
 
 void handleToken() {
+  if (cfg.link != 0) return server.send(403, "text/plain", "Home Assistant integration is off (dongle is in MQTT mode)");
   if (!cfg.pwSet) return server.send(401, "text/plain", "password not set");
   if (loginLocked()) return server.send(429, "text/plain", "too many attempts, wait a moment");
   String n = server.arg("n"), c = server.arg("c"), h = server.arg("h");
@@ -966,7 +971,7 @@ void handleConfigGet() {
   j += "\"mqtt_host\":\"" + cfg.mqttHost + "\",\"mqtt_port\":" + cfg.mqttPort + ",";
   j += "\"mqtt_user\":\"" + cfg.mqttUser + "\",\"client_id\":\"" + cfg.clientId + "\",";
   j += "\"device_name\":\"" + jsonEsc(cfg.deviceName) + "\",\"ap_name\":\"" + jsonEsc(deviceId()) + "\",";
-  j += "\"topic\":\"" + cfg.topic + "\",\"discovery\":" + (cfg.discovery ? 1 : 0) + ",";
+  j += "\"topic\":\"" + cfg.topic + "\",\"discovery\":" + (cfg.discovery ? 1 : 0) + ",\"link\":" + cfg.link + ",";
   j += "\"freq\":\"" + String(cfg.freq, 2) + "\",\"freq_aok\":\"" + String(cfg.freqAok, 2) + "\",";
   j += "\"pins\":\"" + String(cfg.pSck) + "," + cfg.pMiso + "," + cfg.pMosi + "," + cfg.pCs + "," + cfg.pGdo0 + "\"}";
   server.send(200, "application/json", j);
@@ -1000,9 +1005,12 @@ void handleConfigPost() {
   String tp = clean(server.arg("topic"));
   tp.replace("/", "");
   cfg.topic = tp.length() ? tp : defaultTopic();
+  uint8_t linkWas = cfg.link;
+  cfg.link = server.arg("link") == "1" ? 1 : 0;
   bool discoveryWas = cfg.discovery;
   cfg.discovery = server.hasArg("discovery");
   if (discoveryWas && !cfg.discovery && mqtt.connected()) clearDiscovery();
+  if (linkWas != cfg.link) logf("Home Assistant connection: %s", cfg.link ? "MQTT" : "integration");
   float f = server.arg("freq").toFloat();
   if (f > 300 && f < 928) cfg.freq = f;
   f = server.arg("freq_aok").toFloat();
@@ -1125,13 +1133,15 @@ void handleInfo() {
 void handleState() {
   String out;
   out.reserve(512);
-  char buf[120];
-  snprintf(buf, sizeof(buf), "{\"radio\":%d,\"ch\":[", radioOk ? 1 : 0);
+  char buf[200];
+  snprintf(buf, sizeof(buf), "{\"radio\":%d,\"rssi\":%d,\"ip\":\"%s\",\"ap\":%d,\"ch\":[", radioOk ? 1 : 0,
+           WiFi.status() == WL_CONNECTED ? (int)WiFi.RSSI() : 0, WiFi.localIP().toString().c_str(), apOn ? 1 : 0);
   out += buf;
   bool first = true;
   for (int i = 0; i < MAX_CH; i++) {
     if (!sh[i].en) continue;
-    snprintf(buf, sizeof(buf), "%s{\"ch\":%d,\"name\":\"%s\",\"proto\":%d,\"state\":%d}", first ? "" : ",", i, sh[i].name.c_str(), sh[i].proto, sh[i].state);
+    snprintf(buf, sizeof(buf), "%s{\"ch\":%d,\"name\":\"%s\",\"proto\":%d,\"state\":%d,\"id\":\"%06X\",\"code\":%u}", first ? "" : ",", i,
+             jsonEsc(sh[i].name).c_str(), sh[i].proto, sh[i].state, (unsigned)sh[i].id, sh[i].code);
     out += buf;
     first = false;
   }
@@ -1139,13 +1149,29 @@ void handleState() {
   server.send(200, "application/json", out);
 }
 
-void handleHaLink() {
-  if (cfg.discovery) {
-    cfg.discovery = false;
-    saveConfig();
-    if (mqtt.connected()) clearDiscovery();
-    logf("Home Assistant integration linked: MQTT discovery turned off");
+#define AP_HA_MS (20UL * 60 * 1000)
+void startAp(uint32_t until);
+
+void handleReboot() {
+  logf("restart requested from Home Assistant");
+  server.send(200, "text/plain", "OK");
+  rebootAt = millis() + 1500;
+}
+
+void handleApOn() {
+  if (apOn) {
+    apUntil = millis() + AP_HA_MS;
+    apMaxMs = max<uint32_t>(AP_MAX_MS, millis() - apStarted + AP_HA_MS);
+    logf("access point extended for 20 min from Home Assistant");
+  } else {
+    startAp(millis() + AP_HA_MS);
   }
+  apByHa = true;
+  server.send(200, "text/plain", "OK");
+}
+
+void handleHaLink() {
+  if (cfg.link != 0) return server.send(403, "text/plain", "Home Assistant integration is off (dongle is in MQTT mode)");
   server.send(200, "text/plain", "OK");
 }
 
@@ -1194,6 +1220,8 @@ void setupWeb() {
   openRoute("/api/info", HTTP_GET, handleInfo);
   apiRoute("/api/state", HTTP_GET, handleState);
   apiRoute("/api/ha/link", HTTP_POST, handleHaLink);
+  apiRoute("/api/reboot", HTTP_POST, handleReboot);
+  apiRoute("/api/ap", HTTP_POST, handleApOn);
   server.on(
       "/update", HTTP_POST,
       []() {
@@ -1259,12 +1287,15 @@ void startAp(uint32_t until) {
   apUntil = until;
   apStarted = millis();
   apGraceAt = 0;
+  apMaxMs = max<uint32_t>(AP_MAX_MS, until ? until - apStarted : 0);
   digitalWrite(LED_PIN, HIGH);
-  logf("access point \"%s\" on at %s%s", apName.c_str(), WiFi.softAPIP().toString().c_str(), until ? " (3 min)" : "");
+  if (until) logf("access point \"%s\" on at %s (%u min)", apName.c_str(), WiFi.softAPIP().toString().c_str(), (unsigned)((until - apStarted) / 60000));
+  else logf("access point \"%s\" on at %s", apName.c_str(), WiFi.softAPIP().toString().c_str());
 }
 
 void stopAp() {
   if (!apOn) return;
+  apByHa = false;
   dns.stop();
   WiFi.softAPdisconnect(true);
   WiFi.mode(WIFI_STA);
@@ -1365,13 +1396,15 @@ void wifiLoop() {
     bootPhase = false;
     logf("WiFi up: %s, IP %s, %d dBm", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str(), WiFi.RSSI());
     MDNS.end();
-    MDNS.begin(deviceId().c_str());
-    MDNS.addService("http", "tcp", 80);
-    MDNS.addService("shuttersdongle", "tcp", 80);
-    MDNS.addServiceTxt("shuttersdongle", "tcp", "mac", macHex());
-    if (cfg.pwSet) {
-      MDNS.addService("arduino", "tcp", 3232);
-      MDNS.addServiceTxt("arduino", "tcp", "auth_upload", "yes");
+    if (cfg.link == 0) {
+      MDNS.begin(deviceId().c_str());
+      MDNS.addService("http", "tcp", 80);
+      MDNS.addService("shuttersdongle", "tcp", 80);
+      MDNS.addServiceTxt("shuttersdongle", "tcp", "mac", macHex());
+      if (cfg.pwSet) {
+        MDNS.addService("arduino", "tcp", 3232);
+        MDNS.addServiceTxt("arduino", "tcp", "auth_upload", "yes");
+      }
     }
   } else if (!conn && staUp) {
     staUp = false;
@@ -1382,6 +1415,13 @@ void wifiLoop() {
 
   if (conn) {
     if (!apOn) return;
+    if (apByHa) {
+      if ((int32_t)(millis() - apUntil) >= 0 && WiFi.softAPgetStationNum() == 0) {
+        apByHa = false;
+        stopAp();
+      }
+      return;
+    }
     if (WiFi.softAPgetStationNum() == 0) {
       stopAp();
     } else if (!apGraceAt) {
@@ -1408,7 +1448,7 @@ void wifiLoop() {
       lostAp = true;
       startAp(millis() + AP_WINDOW_MS);
     }
-  } else if ((apUntil && (int32_t)(millis() - apUntil) >= 0 && WiFi.softAPgetStationNum() == 0) || (configured && millis() - apStarted >= AP_MAX_MS)) {
+  } else if ((apUntil && (int32_t)(millis() - apUntil) >= 0 && WiFi.softAPgetStationNum() == 0) || (configured && millis() - apStarted >= apMaxMs)) {
     stopAp();
   }
 }

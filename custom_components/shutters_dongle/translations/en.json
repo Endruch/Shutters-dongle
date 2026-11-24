@@ -40,9 +40,37 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "radio": {
+        "name": "Radio"
+      }
+    },
     "button": {
       "shade": {
         "name": "Shade"
+      },
+      "learn": {
+        "name": "Learn"
+      },
+      "restart": {
+        "name": "Restart"
+      },
+      "access_point": {
+        "name": "Access point (20 min)"
+      }
+    },
+    "sensor": {
+      "wifi_signal": {
+        "name": "Wi-Fi signal"
+      },
+      "ip_address": {
+        "name": "IP address"
+      },
+      "remote_id": {
+        "name": "Remote ID"
+      },
+      "rolling_code": {
+        "name": "Rolling code"
       }
     }
   }

@@ -20,6 +20,7 @@ uint8_t chipVersion();
 void buildFrame(uint8_t frame[7], uint32_t remoteId, uint16_t rollingCode, uint8_t cmd);
 
 void transmit(const uint8_t frame[7], uint8_t repeats, bool firstFrame = true);
+uint32_t lastTxMaxLateUs();
 
 void rxStart();
 void rxStop();

@@ -248,10 +248,10 @@ function row(s,open){
   if(c==='DEL'){conf.hidden=false;return}
   if(c==='CANCEL'){conf.hidden=true;return}
   if(c==='DELONLY'){await fetch('/api/shutter/delete',{method:'POST',body:new URLSearchParams({ch:s.ch})});load();return}
-  if(c==='UNPAIR'){await save();conf.hidden=true;
+  if(c==='UNPAIR'){conf.hidden=true;
    await fetch('/api/shutter/unpair',{method:'POST',body:new URLSearchParams({ch:s.ch})});tick();return}
-  await save();
-  await fetch('/api/shutter/cmd',{method:'POST',body:new URLSearchParams({ch:s.ch,cmd:c})});
+  const r=await fetch('/api/shutter/cmd',{method:'POST',body:new URLSearchParams({ch:s.ch,cmd:c})});
+  if(r.ok&&proto.value==='0')code.value=(+code.value||0)+1;
   if(c==='LEARN')flash(b,'PROG sent',3000);
  });
  return tr;

@@ -325,13 +325,13 @@ void execute(uint8_t ch, Cmd cmd) {
     case C_STOP: code = CMD_MY; name = "STOP"; break;
     case C_SHADE: code = CMD_MY; name = "SHADE"; s.state = 90; break;
     case C_SETSHADE: code = CMD_MY; name = "SETSHADE"; repeats = REPEATS_LONG; break;
-    case C_LEARN: code = CMD_PROG; name = "LEARN"; repeats = REPEATS_TAP; break;
+    case C_LEARN: code = CMD_PROG; name = "LEARN"; break;
     default: return;
   }
   uint8_t frame[7];
   Radio::buildFrame(frame, s.id, s.code, code);
   Radio::transmit(frame, repeats);
-  logf("ch%u %s id=%06X code=%u", ch, name, (unsigned)s.id, s.code);
+  logf("ch%u %s id=%06X code=%u jitter=%uus", ch, name, (unsigned)s.id, s.code, (unsigned)Radio::lastTxMaxLateUs());
   s.code++;
   saveShutter(ch, false);
   publishState(ch);

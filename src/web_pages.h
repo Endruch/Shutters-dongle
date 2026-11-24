@@ -207,7 +207,7 @@ static const char PAGE_SHUTTER[] PROGMEM = R"HTML(
 <span class="cnt">Channels: <b id="cnt">0</b> / <span id="tot">0</span></span>
 </div>
 <p style="margin:0 0 4px"><button id="add">+ Add channel</button> <label style="display:inline-block;margin:0 0 0 6px"><input type="checkbox" id="all"> show unused channels</label></p>
-<table id="t"><thead><tr><th>#</th><th>name</th><th>type</th><th></th><th></th></tr></thead><tbody></tbody></table>
+<table id="t"><thead><tr><th>#</th><th>name</th><th></th><th></th></tr></thead><tbody></tbody></table>
 <script>
 const tb=document.querySelector('#t tbody');
 const B=(c,t,x)=>`<button data-c=${c} ${x||''}>${t}</button>`;
@@ -215,13 +215,13 @@ function row(s,open){
  const tr=document.createElement('tr');tr.dataset.ch=s.ch;
  tr.innerHTML=`<td><b>Channel ${s.ch}</b><span class=sv></span></td>
  <td data-l="name"><input type=text value="${s.name}"></td>
- <td data-l="type"><select><option value=0 ${s.proto?'':'selected'}>Somfy RTS</option><option value=1 ${s.proto?'selected':''}>A-OK</option></select></td>
  <td>${B('UP','&#9650;')}${B('STOP','&#9632;')}${B('DOWN','&#9660;')}${B('SHADE','Shade')}${B('SETSHADE','Set shade')}${B('LEARN','Learn','class=learn')}</td>
  <td><details ${open?'open':''}><summary>more</summary>
+  <label>type</label><select><option value=0 ${s.proto?'':'selected'}>Somfy RTS</option><option value=1 ${s.proto?'selected':''}>A-OK</option></select>
   <label>remote ID (hex)</label><input type=text value="${s.id}">
-  <label><input type=checkbox ${s.en?'checked':''}> enabled</label>
-  <small>rolling code (Somfy) / channel address (A-OK). Leave as is unless cloning a remote or grouping A-OK channels.</small>
+  <label><input type=checkbox ${s.en?'checked':''}> enabled (show in Home Assistant)</label>
   <input type=text value="${s.code}">
+  <small>rolling code (Somfy) / channel address (A-OK). Leave as is unless cloning a remote or grouping A-OK channels.</small>
   <div class=pairsel><small>A-OK pairing command (UP is the official one; PROGRAM for some motors)</small>
   <select><option value=0 ${s.pair?'':'selected'}>UP</option><option value=1 ${s.pair?'selected':''}>PROGRAM</option></select></div>
   <p><button class="danger" data-c=DEL>Delete motor</button></p>
@@ -238,6 +238,7 @@ function row(s,open){
   sv.textContent='saved';setTimeout(()=>sv.textContent='',1500);};
  [name,id,en,code,proto,pair].forEach(e=>e.onchange=save);
  en.addEventListener('change',()=>{s.en=en.checked;count()});
+ name.addEventListener('change',()=>{s.name=name.value;count()});
  const upd=()=>{const so=proto.value==='0';
   tr.querySelectorAll('[data-c=SHADE],[data-c=SETSHADE]').forEach(b=>b.style.display=so?'':'none');
   tr.querySelector('.pairsel').style.display=so?'none':'';};
@@ -259,11 +260,12 @@ function row(s,open){
 function flash(b,t,ms){const o=b.textContent;b.classList.add('blink');b.textContent=t;setTimeout(()=>{b.classList.remove('blink');b.textContent=o},ms)}
 let shown=0,data=[],active=false;
 const all=document.getElementById('all');
-function count(){document.getElementById('cnt').textContent=data.filter(x=>x.en).length;document.getElementById('tot').textContent=data.length}
-function render(){count();tb.innerHTML='';data.forEach(s=>{if(s.en||all.checked||s.ch<shown)tb.appendChild(row(s,!s.en))})}
+const used=s=>s.en||s.code!=1||s.state!=-1||s.name!==`Shutter ${s.ch}`;
+function count(){document.getElementById('cnt').textContent=data.filter(used).length;document.getElementById('tot').textContent=data.length}
+function render(){count();tb.innerHTML='';data.forEach(s=>{if(used(s)||all.checked||s.ch<shown)tb.appendChild(row(s,!used(s)))})}
 function load(){fetch('/api/shutters').then(r=>r.json()).then(a=>{data=a;render();tick()})}
 all.onchange=render;
-document.getElementById('add').onclick=()=>{const n=data.find(s=>!s.en&&s.ch>=shown);if(n){shown=n.ch+1;render()}};
+document.getElementById('add').onclick=()=>{const n=data.find(s=>!used(s)&&s.ch>=shown);if(n){shown=n.ch+1;render()}};
 const LBL={learn:'Learn',unpair:'Delete motor'};
 async function tick(){
  const r=await(await fetch('/api/seq')).json();

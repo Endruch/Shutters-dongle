@@ -172,8 +172,9 @@ void loadConfig() {
   cfg.deviceName = prefs.getString("dname", "");
   cfg.topic = prefs.getString("topic", defaultTopic());
   cfg.discovery = prefs.getBool("disc", false);
-  bool mqttSet = cfg.mqttHost.length() && cfg.mqttHost != "0.0.0.0";
-  cfg.link = prefs.getUChar("link", mqttSet ? 1 : 0);
+  // Firmware older than the mode switch has no saved mode: start in Integration so an
+  // update pushed from Home Assistant never locks the integration out. MQTT users switch once.
+  cfg.link = prefs.getUChar("link", 0);
   cfg.freq = prefs.getFloat("freq", 433.42);
   cfg.freqAok = prefs.getFloat("freq_aok", 433.92);
   cfg.pSck = prefs.getUChar("p_sck", 18);
